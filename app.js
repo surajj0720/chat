@@ -13,6 +13,9 @@ const {
 const io = new Server(server);
 const userRoute = require('./routes/userRoute')
 const User = require('./models/userModel')
+const Chat = require('./models/chatModel')
+
+
 
 mongoose.connect('mongodb://127.0.0.1:27017/dynamic-chat-app', {
     useNewUrlParser: true,
@@ -81,6 +84,26 @@ usp.on('connection', async (socket) => {
     socket.on('newChat', (data) => {
         socket.broadcast.emit('loadNewChat', data);
     })
+
+    // load old chats
+    socket.on('existsChat', async (data) => {
+        var chats = await Chat.find({
+            $or: [{
+                sender_id: data.sender_id,
+                receiver_id: data.receiver_id
+            }, {
+                sender_id: data.receiver_id,
+                receiver_id: data.sender_id
+            }]
+        });
+
+        socket.emit('loadChats', {
+            chats: chats
+        });
+
+    })
+
+
 });
 
 
